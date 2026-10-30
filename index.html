@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow • Modern Todo & Task Manager</title>
+  <title>EquipShare • Institutional Resource-Sharing & Equipment Lifecycle</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,236 +12,808 @@
 </head>
 <body>
   <div class="app-wrapper">
-    <!-- Header -->
+    <!-- Header with Persona Switcher, Notifications & Theme -->
     <header class="app-header">
       <div class="header-left">
         <div class="logo-icon">
-          <i class="fa-solid fa-check-double"></i>
+          <i class="fa-solid fa-shapes"></i>
         </div>
         <div>
-          <h1 class="app-title">TaskFlow</h1>
-          <p class="app-subtitle" id="currentDate">Stay organized & productive</p>
+          <div class="brand-row">
+            <h1 class="app-title">EquipShare</h1>
+            <span class="badge badge-primary">Institutional V4</span>
+          </div>
+          <p class="app-subtitle">Controlled Equipment & Space Sharing Lifecycle</p>
         </div>
       </div>
+
       <div class="header-right">
+        <!-- Persona Quick Switcher (FR-15 / Judge Demo Convenience) -->
+        <div class="persona-switcher">
+          <label for="personaSelect"><i class="fa-solid fa-user-gear"></i> Active Persona:</label>
+          <select id="personaSelect" class="persona-select" title="Switch active actor for live demo">
+            <option value="usr_requester">Elena Rostova (Requester • Physics/Robotics)</option>
+            <option value="usr_owner">Dr. Marcus Vance (Resource Owner • Lab Director)</option>
+            <option value="usr_manager">Sarah Jenkins (Staff Manager • Safety & Compliance)</option>
+            <option value="usr_admin">Alex Rivera (Administrator • Facilities & Ops)</option>
+          </select>
+        </div>
+
+        <!-- Notification Bell -->
+        <button id="notifBellBtn" class="icon-btn notif-btn" title="View Notifications" aria-label="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span id="notifBadge" class="notif-badge">0</span>
+        </button>
+
+        <!-- Theme Toggle -->
         <button id="themeToggle" class="icon-btn" title="Toggle Theme" aria-label="Toggle theme">
           <i class="fa-solid fa-sun" id="themeIcon"></i>
         </button>
       </div>
     </header>
 
-    <!-- Stats & Progress Card -->
+    <!-- Operational KPI & Stats Tracker -->
     <section class="stats-card">
       <div class="stats-grid">
         <div class="stat-item">
-          <span class="stat-number" id="totalTasksCount">0</span>
-          <span class="stat-label">Total Tasks</span>
+          <span class="stat-number text-primary" id="kpiTotalResources">0</span>
+          <span class="stat-label">Shared Resources</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-number text-pending" id="pendingTasksCount">0</span>
-          <span class="stat-label">In Progress</span>
+          <span class="stat-number text-success" id="kpiActiveLoans">0</span>
+          <span class="stat-label">Active Loans (In-Use)</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-number text-completed" id="completedTasksCount">0</span>
-          <span class="stat-label">Completed</span>
+          <span class="stat-number text-warning" id="kpiPendingReviews">0</span>
+          <span class="stat-label">Pending Approvals</span>
         </div>
-      </div>
-      <div class="progress-container">
-        <div class="progress-info">
-          <span>Overall Progress</span>
-          <span id="progressPercent">0%</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number text-danger" id="kpiOpenIncidents">0</span>
+          <span class="stat-label">Open Incidents / Disputes</span>
         </div>
       </div>
     </section>
 
-    <!-- Task Creator Card -->
-    <section class="creator-card">
-      <form id="taskForm" class="task-form">
-        <div class="form-row main-input-row">
-          <div class="input-with-icon">
-            <i class="fa-solid fa-pen"></i>
-            <input 
-              type="text" 
-              id="taskInput" 
-              placeholder="What needs to be done? (e.g., Complete project presentation)" 
-              required
-              autocomplete="off"
-            />
+    <!-- Role-Aware Navigation Bar -->
+    <nav class="main-nav">
+      <button class="nav-tab active" data-tab="discover">
+        <i class="fa-solid fa-compass"></i> Discover & Reserve
+      </button>
+      <button class="nav-tab" data-tab="bookings">
+        <i class="fa-solid fa-calendar-check"></i> My Bookings <span class="tab-badge" id="tabMyBookingsCount">0</span>
+      </button>
+      <button class="nav-tab" data-tab="ownerDesk" id="navOwnerDesk">
+        <i class="fa-solid fa-clipboard-check"></i> Owner Desk <span class="tab-badge badge-warning" id="tabOwnerDeskCount">0</span>
+      </button>
+      <button class="nav-tab" data-tab="verifications" id="navVerifications">
+        <i class="fa-solid fa-id-card"></i> Staff Verification <span class="tab-badge" id="tabVerificationsCount">0</span>
+      </button>
+      <button class="nav-tab" data-tab="incidents" id="navIncidents">
+        <i class="fa-solid fa-triangle-exclamation"></i> Incidents & Safety <span class="tab-badge badge-danger" id="tabIncidentsCount">0</span>
+      </button>
+      <button class="nav-tab" data-tab="audit" id="navAudit">
+        <i class="fa-solid fa-shield-halved"></i> Audit & Governance
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="app-content">
+
+      <!-- TAB 1: DISCOVER & RESERVE (FR-01, FR-02, FR-04, FR-05) -->
+      <section id="view-discover" class="tab-view active">
+        <div class="toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="resourceSearchInput" placeholder="Search by name, department, location, or asset tag...">
           </div>
-          <button type="submit" class="primary-btn" id="submitTaskBtn">
-            <i class="fa-solid fa-plus"></i>
-            <span>Add Task</span>
+          <div class="filter-group">
+            <label for="categoryFilter"><i class="fa-solid fa-filter"></i> Category:</label>
+            <select id="categoryFilter">
+              <option value="All">All Categories</option>
+              <option value="Lab Instruments">🔬 Lab Instruments</option>
+              <option value="Media & Cameras">🎥 Media & Cameras</option>
+              <option value="Workshop Tools">🛠️ Workshop Tools</option>
+              <option value="Bookable Spaces">🏢 Bookable Spaces</option>
+            </select>
+          </div>
+          <button id="openNewResourceBtn" class="primary-btn hidden-for-requester">
+            <i class="fa-solid fa-plus"></i> List New Resource
           </button>
         </div>
 
-        <div class="form-row options-row">
-          <div class="option-field">
-            <label for="taskCategory"><i class="fa-solid fa-folder-open"></i> Category</label>
-            <select id="taskCategory">
-              <option value="Work">💼 Work</option>
-              <option value="Personal">🏡 Personal</option>
-              <option value="Study">📚 Study</option>
-              <option value="Health">💪 Health</option>
-              <option value="Finance">💰 Finance</option>
-              <option value="Other">✨ Other</option>
-            </select>
-          </div>
+        <div id="resourcesGrid" class="resources-grid">
+          <!-- Dynamically populated resource cards -->
+        </div>
+      </section>
 
-          <div class="option-field">
-            <label for="taskPriority"><i class="fa-solid fa-flag"></i> Priority</label>
-            <select id="taskPriority">
-              <option value="medium" selected>🟡 Medium</option>
-              <option value="high">🔴 High</option>
-              <option value="low">🟢 Low</option>
-            </select>
+      <!-- TAB 2: MY BOOKINGS (FR-05, FR-08, FR-09, FR-10, FR-13) -->
+      <section id="view-bookings" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>My Reservation Lifecycle</h2>
+            <p class="text-muted">Track your submitted, approved, active in-use, and returned bookings.</p>
           </div>
-
-          <div class="option-field">
-            <label for="taskDueDate"><i class="fa-solid fa-calendar"></i> Due Date</label>
-            <input type="date" id="taskDueDate" />
+          <div class="filter-chips" id="bookingStatusFilters">
+            <button class="chip active" data-filter="all">All</button>
+            <button class="chip" data-filter="submitted">Pending Review</button>
+            <button class="chip" data-filter="approved">Approved</button>
+            <button class="chip" data-filter="in_use">In Use</button>
+            <button class="chip" data-filter="waitlisted">Waitlisted</button>
+            <button class="chip" data-filter="completed">Completed</button>
           </div>
         </div>
-      </form>
-    </section>
 
-    <!-- Filter & Search Controls -->
-    <section class="controls-card">
-      <div class="search-box">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" placeholder="Search tasks..." />
-        <button id="clearSearchBtn" class="clear-btn hidden" title="Clear search">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+        <div id="bookingsList" class="bookings-list">
+          <!-- Dynamically populated booking cards -->
+        </div>
+      </section>
 
-      <div class="filter-group">
-        <!-- Status Filters -->
-        <div class="tabs" id="statusTabs">
-          <button class="tab-btn active" data-status="all">All</button>
-          <button class="tab-btn" data-status="active">Active</button>
-          <button class="tab-btn" data-status="completed">Done</button>
+      <!-- TAB 3: OWNER DESK (FR-01, FR-06, FR-09, FR-10, FR-17) -->
+      <section id="view-ownerDesk" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Resource Custodian & Lending Desk</h2>
+            <p class="text-muted">Review booking requests, record handovers (pickup), and verify returns.</p>
+          </div>
         </div>
 
-        <!-- Secondary Filters -->
-        <div class="dropdown-filters">
-          <select id="categoryFilter" aria-label="Filter by category">
-            <option value="all">All Categories</option>
-            <option value="Work">💼 Work</option>
-            <option value="Personal">🏡 Personal</option>
-            <option value="Study">📚 Study</option>
-            <option value="Health">💪 Health</option>
-            <option value="Finance">💰 Finance</option>
-            <option value="Other">✨ Other</option>
-          </select>
-
-          <select id="priorityFilter" aria-label="Filter by priority">
-            <option value="all">All Priorities</option>
-            <option value="high">🔴 High</option>
-            <option value="medium">🟡 Medium</option>
-            <option value="low">🟢 Low</option>
-          </select>
-
-          <select id="sortBy" aria-label="Sort tasks">
-            <option value="dateAddedDesc">Newest First</option>
-            <option value="dateAddedAsc">Oldest First</option>
-            <option value="dueDateAsc">Due Date (Soonest)</option>
-            <option value="priorityDesc">Priority (High to Low)</option>
-          </select>
+        <!-- Section: Pending Booking Approvals -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-inbox"></i> Pending Booking Requests Requiring Review</h3>
+            <span class="badge badge-warning" id="ownerPendingBadge">0 requests</span>
+          </div>
+          <div id="ownerRequestsList" class="table-container">
+            <!-- Table of pending requests -->
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Quick Actions Bar -->
-    <div class="quick-actions-bar">
-      <span class="active-count-text" id="filteredCount">Showing 0 tasks</span>
-      <div class="bulk-actions">
-        <button id="markAllBtn" class="subtle-btn" title="Toggle all tasks completion">
-          <i class="fa-solid fa-check"></i> Complete All
-        </button>
-        <button id="clearCompletedBtn" class="subtle-btn danger" title="Clear completed tasks">
-          <i class="fa-solid fa-trash-can"></i> Clear Completed
-        </button>
-      </div>
-    </div>
-
-    <!-- Task List -->
-    <main class="task-list-container">
-      <ul id="taskList" class="task-list">
-        <!-- Dynamic Tasks Injected Here -->
-      </ul>
-
-      <!-- Empty State -->
-      <div id="emptyState" class="empty-state hidden">
-        <div class="empty-icon">
-          <i class="fa-solid fa-clipboard-check"></i>
+        <!-- Section: Handover & Returns Action Queue -->
+        <div class="section-card mt-4">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-dolly"></i> Handover (Pickup) & Return Action Queue</h3>
+            <span class="badge badge-primary">Active Operations</span>
+          </div>
+          <div id="ownerHandoverList" class="table-container">
+            <!-- Table of approved (ready for pickup) & in_use (ready for return) items -->
+          </div>
         </div>
-        <h3 id="emptyTitle">No tasks found</h3>
-        <p id="emptyDescription">You have no tasks matching this filter. Relax or add a new task!</p>
-      </div>
+
+        <!-- Section: Owned Resources Catalog -->
+        <div class="section-card mt-4">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-boxes-stacked"></i> Managed Resources Catalog</h3>
+            <button id="addResourceFromOwnerBtn" class="secondary-btn btn-sm">
+              <i class="fa-solid fa-plus"></i> Add New Resource
+            </button>
+          </div>
+          <div id="ownerResourcesTable" class="table-container">
+            <!-- Table of managed resources -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: STAFF VERIFICATION (FR-03, FR-04) -->
+      <section id="view-verifications" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>User Eligibility & Qualification Compliance Desk</h2>
+            <p class="text-muted">Audit and verify lab safety, specialized certifications, and equipment authorizations.</p>
+          </div>
+          <button id="submitQualificationBtn" class="primary-btn btn-sm">
+            <i class="fa-solid fa-file-arrow-up"></i> Submit New Qualification
+          </button>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-user-check"></i> Qualification Verification Queue</h3>
+          </div>
+          <div id="verificationsTable" class="table-container">
+            <!-- Verifications table -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: INCIDENTS & SAFETY (FR-12) -->
+      <section id="view-incidents" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>Damage, Delay & Incident Oversight</h2>
+            <p class="text-muted">Transparent tracking and human review for damages, delayed returns, and equipment disputes.</p>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> Incident & Dispute Log</h3>
+            <span class="badge badge-danger" id="incidentCountBadge">0 Total</span>
+          </div>
+          <div id="incidentsTable" class="table-container">
+            <!-- Incidents table -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: AUDIT & GOVERNANCE (FR-08, FR-15, FR-16, FR-17) -->
+      <section id="view-audit" class="tab-view">
+        <div class="view-header">
+          <div>
+            <h2>System Governance & Immutable Audit Trail</h2>
+            <p class="text-muted">Cryptographically tracked event log of all lifecycle state transitions, decisions, and fair-use policies.</p>
+          </div>
+        </div>
+
+        <!-- Fair-Use Policy Controls -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-scale-balanced"></i> Fair-Use & Allocation Policies</h3>
+            <span class="badge badge-primary">Institutional Configuration</span>
+          </div>
+          <div id="policiesGrid" class="policies-grid">
+            <!-- Dynamically populated policies -->
+          </div>
+        </div>
+
+        <!-- Audit Event History -->
+        <div class="section-card mt-4">
+          <div class="section-card-header">
+            <h3><i class="fa-solid fa-list-check"></i> Complete Activity & Decision Audit Trail</h3>
+            <button id="refreshAuditBtn" class="secondary-btn btn-sm"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+          </div>
+          <div id="auditTable" class="table-container">
+            <!-- Audit trail table -->
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>Built with ❤️ for <strong>Codeverse Hackathon</strong> • Stores data locally in your browser</p>
+      <p>EquipShare Institutional Resource-Sharing Platform • Codeverse Hackathon</p>
+      <p class="text-muted">Built with Zero External Build Dependencies • Strict Server-Side Authorization & Concurrency Protection</p>
     </footer>
   </div>
 
-  <!-- Edit Task Modal -->
-  <div id="editModal" class="modal-backdrop hidden">
-    <div class="modal-content">
+  <!-- MODALS -->
+
+  <!-- 1. Booking Request Modal (FR-04, FR-05, FR-07) -->
+  <div id="bookingModal" class="modal-backdrop">
+    <div class="modal-card">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-pen-to-square"></i> Edit Task</h3>
-        <button id="closeModalBtn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+        <div class="modal-title-row">
+          <i class="fa-solid fa-calendar-plus text-primary"></i>
+          <div>
+            <h3 id="modalResourceName">Request Reservation</h3>
+            <span class="badge" id="modalResourceTag">TAG</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="bookingModal">&times;</button>
       </div>
-      <form id="editTaskForm">
-        <input type="hidden" id="editTaskId" />
-        <div class="form-group">
-          <label for="editTaskTitle">Task Description</label>
-          <input type="text" id="editTaskTitle" required />
+
+      <form id="bookingForm" class="modal-form">
+        <input type="hidden" id="bookingResourceId">
+
+        <div id="bookingEligibilityBanner" class="alert-banner alert-warning hidden">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span id="bookingEligibilityMsg">Eligibility verification required.</span>
         </div>
-        <div class="form-row modal-row">
-          <div class="form-group">
-            <label for="editTaskCategory">Category</label>
-            <select id="editTaskCategory">
-              <option value="Work">💼 Work</option>
-              <option value="Personal">🏡 Personal</option>
-              <option value="Study">📚 Study</option>
-              <option value="Health">💪 Health</option>
-              <option value="Finance">💰 Finance</option>
-              <option value="Other">✨ Other</option>
-            </select>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="bookingStartTime"><i class="fa-solid fa-clock"></i> Start Date & Time</label>
+            <input type="datetime-local" id="bookingStartTime" required>
           </div>
-          <div class="form-group">
-            <label for="editTaskPriority">Priority</label>
-            <select id="editTaskPriority">
-              <option value="high">🔴 High</option>
-              <option value="medium">🟡 Medium</option>
-              <option value="low">🟢 Low</option>
-            </select>
+          <div class="form-group flex-1">
+            <label for="bookingEndTime"><i class="fa-solid fa-clock-rotate-left"></i> End Date & Time</label>
+            <input type="datetime-local" id="bookingEndTime" required>
           </div>
         </div>
-        <div class="form-group">
-          <label for="editTaskDueDate">Due Date</label>
-          <input type="date" id="editTaskDueDate" />
+
+        <div class="booking-duration-hint" id="bookingDurationHint">
+          Estimated duration: <strong>0 hours</strong> (Allowed: <span id="modalMinMaxDuration">1h - 24h</span>)
         </div>
+
+        <div class="form-group">
+          <label for="bookingPurpose"><i class="fa-solid fa-pen-to-square"></i> Project / Purpose Details</label>
+          <textarea id="bookingPurpose" rows="3" placeholder="Describe the academic or institutional purpose for this booking..." required></textarea>
+        </div>
+
+        <div class="form-group operating-rules-box">
+          <label><i class="fa-solid fa-triangle-exclamation"></i> Operating Rules & Safety Guidelines</label>
+          <div class="rules-text" id="modalOperatingRules">Standard lab rules apply.</div>
+        </div>
+
         <div class="modal-actions">
-          <button type="button" id="cancelEditBtn" class="subtle-btn">Cancel</button>
-          <button type="submit" class="primary-btn">Save Changes</button>
+          <button type="button" class="secondary-btn" data-close="bookingModal">Cancel</button>
+          <button type="submit" class="primary-btn" id="submitBookingBtn">
+            <i class="fa-solid fa-check"></i> Submit Reservation Request
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast hidden">
-    <span id="toastMessage"></span>
+  <!-- 2. Decision Modal (Approve / Reject / Waitlist) (FR-06) -->
+  <div id="decisionModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-user-check text-primary"></i>
+          <div>
+            <h3>Review Booking Request</h3>
+            <span class="badge" id="decisionBookingId">BOK</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="decisionModal">&times;</button>
+      </div>
+
+      <form id="decisionForm" class="modal-form">
+        <input type="hidden" id="decisionBookingIdInput">
+
+        <div class="decision-summary-box">
+          <p><strong>Resource:</strong> <span id="decisionResourceTitle">-</span></p>
+          <p><strong>Requester:</strong> <span id="decisionRequesterTitle">-</span></p>
+          <p><strong>Time Window:</strong> <span id="decisionTimeWindow">-</span></p>
+          <p><strong>Stated Purpose:</strong> <span id="decisionPurpose">-</span></p>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-gavel"></i> Custodian Decision</label>
+          <div class="decision-options">
+            <label class="radio-card">
+              <input type="radio" name="bookingDecision" value="approved" checked>
+              <div class="radio-content">
+                <strong class="text-success"><i class="fa-solid fa-circle-check"></i> Approve</strong>
+                <span>Confirm reservation for requested slot</span>
+              </div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="bookingDecision" value="waitlisted">
+              <div class="radio-content">
+                <strong class="text-warning"><i class="fa-solid fa-clock"></i> Waitlist</strong>
+                <span>Queue requester behind existing booking</span>
+              </div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="bookingDecision" value="rejected">
+              <div class="radio-content">
+                <strong class="text-danger"><i class="fa-solid fa-circle-xmark"></i> Reject</strong>
+                <span>Decline request with documented reason</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="decisionReason"><i class="fa-solid fa-comment-dots"></i> Decision Reason / Review Notes</label>
+          <textarea id="decisionReason" rows="3" placeholder="Provide explanation or pickup instructions..." required></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="decisionModal">Cancel</button>
+          <button type="submit" class="primary-btn" id="submitDecisionBtn">
+            <i class="fa-solid fa-stamp"></i> Record Decision
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
+  <!-- 3. Record Pickup Modal (FR-09, FR-11) -->
+  <div id="pickupModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-box-open text-primary"></i>
+          <div>
+            <h3>Record Pickup (Handover)</h3>
+            <span class="badge badge-success">Initial Condition Inspection</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="pickupModal">&times;</button>
+      </div>
+
+      <form id="pickupForm" class="modal-form">
+        <input type="hidden" id="pickupBookingId">
+
+        <div class="decision-summary-box">
+          <p><strong>Item:</strong> <span id="pickupItemTitle">-</span></p>
+          <p><strong>Asset Barcode / Tag:</strong> <span id="pickupAssetTag">-</span></p>
+          <p><strong>Borrower:</strong> <span id="pickupBorrowerTitle">-</span></p>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-list-check"></i> Initial Verification Checklist</label>
+          <div class="checklist-grid">
+            <label class="checkbox-label">
+              <input type="checkbox" id="pickupCleanCheck" checked required>
+              <span>Item is clean and free of contamination</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="pickupOperationalCheck" checked required>
+              <span>Power, optics, and operational self-test verified</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="pickupAccessoriesCheck" checked required>
+              <span>All cables, accessories, and protective cases present</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="pickupConditionRating"><i class="fa-solid fa-star"></i> Overall Condition Rating</label>
+          <select id="pickupConditionRating">
+            <option value="Excellent" selected>⭐ Excellent (Flawless condition)</option>
+            <option value="Good">👍 Good (Normal cosmetic signs of use)</option>
+            <option value="Fair">⚠️ Fair (Functional with minor cosmetic marks)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="pickupNotes"><i class="fa-solid fa-note-sticky"></i> Handover Notes</label>
+          <input type="text" id="pickupNotes" placeholder="e.g. Handed over with 2 fully charged batteries and case key" value="Handover complete; verified operational.">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="pickupModal">Cancel</button>
+          <button type="submit" class="primary-btn btn-success" id="submitPickupBtn">
+            <i class="fa-solid fa-dolly"></i> Confirm Handover & Transition to In-Use
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Confirm Return Modal (FR-10, FR-11, FR-12) -->
+  <div id="returnModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-rotate-left text-primary"></i>
+          <div>
+            <h3>Confirm Return (Check-In)</h3>
+            <span class="badge badge-primary">Final Condition Audit</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="returnModal">&times;</button>
+      </div>
+
+      <form id="returnForm" class="modal-form">
+        <input type="hidden" id="returnBookingId">
+
+        <div class="decision-summary-box">
+          <p><strong>Item:</strong> <span id="returnItemTitle">-</span></p>
+          <p><strong>Returned By:</strong> <span id="returnBorrowerTitle">-</span></p>
+          <p><strong>Initial Condition Recorded at Pickup:</strong> <span id="returnInitialConditionBadge" class="badge badge-success">Excellent</span></p>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-list-check"></i> Return Inspection Checklist</label>
+          <div class="checklist-grid">
+            <label class="checkbox-label">
+              <input type="checkbox" id="returnCleanCheck" checked>
+              <span>Cleaned and returned to proper storage order</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="returnOperationalCheck" checked>
+              <span>Operational test passed without error</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="returnAccessoriesCheck" checked>
+              <span>All bundled accessories returned</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="returnConditionRating"><i class="fa-solid fa-star"></i> Final Condition Rating</label>
+          <select id="returnConditionRating">
+            <option value="Excellent">⭐ Excellent</option>
+            <option value="Good" selected>👍 Good</option>
+            <option value="Fair">⚠️ Fair</option>
+            <option value="Damaged/Issues">🚨 Damaged / Missing Items</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="returnNotes"><i class="fa-solid fa-note-sticky"></i> Inspection Notes</label>
+          <input type="text" id="returnNotes" placeholder="e.g. Returned on time in good order" value="Returned and inspected by custodian.">
+        </div>
+
+        <!-- Incident / Discrepancy Toggle -->
+        <div class="form-group incident-toggle-box">
+          <label class="checkbox-label">
+            <input type="checkbox" id="returnIncidentFlag">
+            <span class="text-danger"><strong><i class="fa-solid fa-triangle-exclamation"></i> Flag Discrepancy / Open Damage Incident</strong></span>
+          </label>
+          <div id="returnIncidentDetails" class="hidden mt-2">
+            <textarea id="returnIncidentDescription" rows="2" placeholder="Describe the specific damage, missing accessory, or delay..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="returnModal">Cancel</button>
+          <button type="submit" class="primary-btn btn-primary" id="submitReturnBtn">
+            <i class="fa-solid fa-clipboard-check"></i> Close Transaction & Release Slot
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Create / Edit Resource Modal (FR-01, FR-17) -->
+  <div id="resourceModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-microchip text-primary"></i>
+          <div>
+            <h3 id="resourceModalTitle">List New Institutional Resource</h3>
+            <span class="badge badge-primary">Catalog Registry</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="resourceModal">&times;</button>
+      </div>
+
+      <form id="resourceForm" class="modal-form">
+        <input type="hidden" id="editResourceId">
+
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="resNameInput">Resource / Equipment Name</label>
+            <input type="text" id="resNameInput" placeholder="e.g. Sony FX6 Cinema Camera or Laser Cutter" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="resCategoryInput">Category</label>
+            <select id="resCategoryInput" required>
+              <option value="Lab Instruments">🔬 Lab Instruments</option>
+              <option value="Media & Cameras">🎥 Media & Cameras</option>
+              <option value="Workshop Tools">🛠️ Workshop Tools</option>
+              <option value="Bookable Spaces">🏢 Bookable Spaces</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="resLocationInput">Physical Location / Lab</label>
+            <input type="text" id="resLocationInput" placeholder="e.g. FabLab Room 102" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="resAssetTagInput">Unique Asset Tag / Barcode</label>
+            <input type="text" id="resAssetTagInput" placeholder="e.g. FAB-LSR-004" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="resDescriptionInput">Description & Specifications</label>
+          <textarea id="resDescriptionInput" rows="2" placeholder="Key features, specifications, and included accessories..." required></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="resMinHoursInput">Min Duration (Hours)</label>
+            <input type="number" id="resMinHoursInput" min="1" max="100" value="1" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="resMaxHoursInput">Max Duration (Hours)</label>
+            <input type="number" id="resMaxHoursInput" min="1" max="168" value="24" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="resQualInput">Mandatory Required Training / Qualification</label>
+          <select id="resQualInput">
+            <option value="">None (Open to all active campus members)</option>
+            <option value="general_safety">General Campus Safety Clearance</option>
+            <option value="media_equipment">Media & Optics Handling Authorization</option>
+            <option value="laser_safety">Class 4 Laser Safety & Optics Protocol</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="resOperatingRulesInput">Operating Rules & Safety Instructions</label>
+          <textarea id="resOperatingRulesInput" rows="2" placeholder="Mandatory rules for user operation..."></textarea>
+        </div>
+
+        <div class="form-row checkbox-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="resRequiresApprovalInput" checked>
+            <span>Requires human owner review (disable for instant booking)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="resSupervisionInput">
+            <span>Requires staff supervision during operation</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="resourceModal">Cancel</button>
+          <button type="submit" class="primary-btn" id="saveResourceBtn">
+            <i class="fa-solid fa-floppy-disk"></i> Save & Publish Resource
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Submit Qualification Modal (FR-03) -->
+  <div id="qualificationModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-graduation-cap text-primary"></i>
+          <div>
+            <h3>Submit Qualification / Safety Certificate</h3>
+            <span class="badge badge-primary">Compliance Record</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="qualificationModal">&times;</button>
+      </div>
+
+      <form id="qualificationForm" class="modal-form">
+        <div class="form-group">
+          <label for="qualTypeSelect">Qualification / Training Standard</label>
+          <select id="qualTypeSelect" required>
+            <option value="laser_safety">Class 4 Laser Safety & Optics Protocol</option>
+            <option value="media_equipment">Media & Optics Handling Authorization</option>
+            <option value="general_safety">Campus General Safety Clearance</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="qualEvidenceRef">Certificate / Document Reference ID</label>
+          <input type="text" id="qualEvidenceRef" placeholder="e.g. CERT-LASER-2026-904" required>
+        </div>
+
+        <div class="form-group">
+          <label for="qualNotes">Notes / Issuing Authority</label>
+          <textarea id="qualNotes" rows="2" placeholder="Details regarding training completion date and instructor..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="qualificationModal">Cancel</button>
+          <button type="submit" class="primary-btn" id="submitQualBtn">
+            <i class="fa-solid fa-paper-plane"></i> Submit for Review
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. Review Qualification Modal (FR-04) -->
+  <div id="reviewQualModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-id-card-clip text-primary"></i>
+          <div>
+            <h3>Audit User Qualification</h3>
+            <span class="badge badge-warning" id="reviewQualIdBadge">VER</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="reviewQualModal">&times;</button>
+      </div>
+
+      <form id="reviewQualForm" class="modal-form">
+        <input type="hidden" id="reviewQualIdInput">
+
+        <div class="decision-summary-box">
+          <p><strong>Candidate:</strong> <span id="reviewQualUserName">-</span></p>
+          <p><strong>Standard:</strong> <span id="reviewQualName">-</span></p>
+          <p><strong>Document Ref:</strong> <span id="reviewQualDocRef">-</span></p>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fa-solid fa-gavel"></i> Compliance Decision</label>
+          <div class="decision-options">
+            <label class="radio-card">
+              <input type="radio" name="qualDecision" value="verified" checked>
+              <div class="radio-content">
+                <strong class="text-success"><i class="fa-solid fa-check"></i> Approve & Verify</strong>
+                <span>Grants 1-year access eligibility</span>
+              </div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="qualDecision" value="rejected">
+              <div class="radio-content">
+                <strong class="text-danger"><i class="fa-solid fa-xmark"></i> Reject</strong>
+                <span>Invalid or insufficient proof</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reviewQualNotes">Audit Notes / Reason</label>
+          <textarea id="reviewQualNotes" rows="2" placeholder="Enter verification notes..." required>Verified against campus training database.</textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="reviewQualModal">Cancel</button>
+          <button type="submit" class="primary-btn" id="submitReviewQualBtn">
+            <i class="fa-solid fa-stamp"></i> Record Qualification Decision
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 8. Resolve Incident Modal (FR-12) -->
+  <div id="resolveIncidentModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-shield-virus text-danger"></i>
+          <div>
+            <h3>Review & Resolve Incident</h3>
+            <span class="badge badge-danger" id="resolveIncidentBadge">INC</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" data-close="resolveIncidentModal">&times;</button>
+      </div>
+
+      <form id="resolveIncidentForm" class="modal-form">
+        <input type="hidden" id="resolveIncidentIdInput">
+
+        <div class="decision-summary-box">
+          <p><strong>Resource:</strong> <span id="resolveIncResource">-</span></p>
+          <p><strong>Reported By:</strong> <span id="resolveIncReporter">-</span></p>
+          <p><strong>Issue Type:</strong> <span id="resolveIncType" class="badge badge-danger">-</span></p>
+          <p><strong>Description:</strong> <span id="resolveIncDescription">-</span></p>
+        </div>
+
+        <div class="form-group">
+          <label for="resolveIncStatus">Outcome Status</label>
+          <select id="resolveIncStatus">
+            <option value="resolved">Resolved (Corrective action / repair completed)</option>
+            <option value="dismissed">Dismissed (Minor wear / no breach)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="resolveIncNotes">Resolution Notes & Findings</label>
+          <textarea id="resolveIncNotes" rows="3" placeholder="Enter resolution notes and cost/repair accountability details..." required></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close="resolveIncidentModal">Cancel</button>
+          <button type="submit" class="primary-btn btn-danger" id="submitResolveIncBtn">
+            <i class="fa-solid fa-check-double"></i> Save Resolution
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 9. Notifications Drawer Modal (FR-14) -->
+  <div id="notificationsModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <i class="fa-solid fa-bell text-primary"></i>
+          <h3>Lifecycle Notifications</h3>
+        </div>
+        <div class="modal-header-actions">
+          <button id="markAllNotifsReadBtn" class="secondary-btn btn-sm">Mark All Read</button>
+          <button class="close-modal-btn" data-close="notificationsModal">&times;</button>
+        </div>
+      </div>
+      <div id="notificationsList" class="notifications-list">
+        <!-- Notifications rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Script -->
   <script src="app.js"></script>
 </body>
 </html>
