@@ -1,0 +1,47 @@
+include:
+  - path: cider-ci/task-components/database/configure.yml
+    submodule: [legacy]
+  - path: cider-ci/task-components/bundle-rspec-ruby.yml
+    submodule: [legacy]
+
+scripts:
+
+  legacy-service-run:
+    body: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd $LEIHS_LEGACY_DIR
+      echo $PWD
+      ls -lah
+      ls -lah config
+      SECRET_KEY_BASE_DUMMY=1 ruby -S \
+          bundle exec puma \
+          -e production \
+          -t 1:2 \
+          -w 2 \
+          -b tcp://localhost:${LEIHS_LEGACY_HTTP_PORT}
+    start_when:
+      ruby setup legacy :
+        script_key: legacy-bundle-rspec-ruby
+      database has been created:
+        script_key: create-database
+      database is configured:
+        script_key: legacy-configure-rails-db
+
+  legacy-service-stop:
+    timeout: 5 Seconds
+    body: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      kill -INT $(lsof -t -wni tcp:${LEIHS_LEGACY_HTTP_PORT})
+      sleep 1
+    start_when:
+      test is in terminal state:
+        script_key: test
+        states: [aborted, defective, passed, failed, skipped]
+
+  test:
+    start_when:
+      legacy service is running:
+        script_key: legacy-service-run
+        states: [executing]

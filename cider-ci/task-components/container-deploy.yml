@@ -1,0 +1,21 @@
+context:
+
+  task_defaults:
+
+    traits:
+      incus: True
+
+    max_trials: 2
+    eager_trials: 1
+
+    scripts:
+      show-log-if-failed:
+        ignore_state: yes
+        ignore_abort: yes
+        start_when:
+          deploy has failed:
+            script_key: deploy-to-container
+            states: [failed]
+        body: |
+          #!/usr/bin/env bash
+          incus exec ${CONTAINER_NAME} -- /bin/bash -c "journalctl -xe"

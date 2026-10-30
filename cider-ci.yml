@@ -1,0 +1,11 @@
+include:
+  - cider-ci/jobs/good-to-merge.yml
+  - cider-ci/jobs/meta.yml
+  - cider-ci/jobs/deploy-to-container.yml
+  - cider-ci/jobs/integration-tests.yml
+  - path: cider-ci/jobs/deploy-to-dev.yml
+    submodule: [zhdk-inventory]
+  - path: cider-ci/jobs/deploy-to-staging.yml
+    submodule: [zhdk-inventory]
+  - path: cider-ci/jobs/deploy-to-test.yml
+    submodule: [zhdk-inventory]

@@ -1,0 +1,43 @@
+jobs:
+  meta:
+    name: Meta
+    description: |
+      Various superordinate quality assurance tasks
+
+    run_when:
+      always:
+        type: branch
+        include_match: ^.*$
+        exclude_match: '^.*(no-ci|hotspot).*$'
+
+    context:
+      task_defaults:
+
+        max_trials: 3
+
+        traits:
+          asdf: true
+
+        git_options:
+          submodules:
+            include_match: ^.*$
+
+        environment_variables:
+          LEIHS_ROOT_DIR: '{{CIDER_CI_WORKING_DIR}}'
+          LEIHS_INTEGRATION_TESTS_DIR: '{{LEIHS_ROOT_DIR}}/integration-tests'
+
+      tasks:
+
+        submodule-consistency:
+          name: "identical submodules are on the same commit"
+          include: cider-ci/task-components/submodule-consistency.yml
+
+        ahead-of-master:
+          name: "origin/master is ancestor of HEAD"
+          include: cider-ci/task-components/ahead-of-master.yml
+
+        integration-tests-ruby-lint:
+          name: "Ruby lint integration tests"
+          include:
+            - path: cider-ci/task-components/ruby-lint.yml
+              submodule: [integration-tests]

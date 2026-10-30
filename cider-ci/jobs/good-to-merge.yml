@@ -1,0 +1,76 @@
+jobs:
+  good-to-merge:
+    name: ⚑ Good To Merge
+
+    description: |
+      This job depends on all other tests and checks
+      and it will pass if and only if all dependencies have passed.
+      Status of this job is **used by github's "branch protection"**!
+
+    depends_on: &GOOD_TO_MERGE_DEPENDENTS
+      deploy to container was successful:
+        type: job
+        job_key: test-container-deploy
+        states: [passed]
+      integration tests were successful:
+        type: job
+        job_key: integration-tests
+        states: [passed]
+      meta checks have passed:
+        type: job
+        job_key: meta
+        states: [passed]
+      legacy merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['legacy']
+        states: [passed]
+      admin merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['admin']
+        states: [passed]
+      procure merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['procure']
+        states: [passed]
+      my merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['my']
+        states: [passed]
+      inventory merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['inventory']
+        states: [passed]
+      borrow merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['borrow']
+        states: [passed]
+      mail merged to master:
+        type: job
+        job_key: merged-to-master
+        submodule: ['mail']
+        states: [passed]
+
+    run_when: *GOOD_TO_MERGE_DEPENDENTS
+
+    priority: 999 # "empty" job = high priority
+
+    context:
+      task_defaults:
+        max_trials: 1
+      tasks:
+
+        all relevant tests have passed:
+          name: "All relevant tests have passed, thus good to merge"
+          scripts:
+            main:
+              body: echo 'All relevant tests have passed' ; exit 0
+
+        include:
+          - path: cider-ci/context-components/merged-submodules-check.yml
+            submodule: [legacy]
