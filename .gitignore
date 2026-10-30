@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Operating System files
 .DS_Store
 .DS_Store?
@@ -32,3 +33,11 @@ yarn-error.log*
 *.log
 /tmp/*
 !/tmp/.gitkeep
+=======
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+node_modules/
+>>>>>>> upstream/main
