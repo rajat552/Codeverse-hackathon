@@ -1,0 +1,20 @@
+{
+  "name": "resource-sharing-platform",
+  "version": "1.0.0",
+  "description": "Enterprise-grade Institutional Resource Sharing & Controlled Equipment Lifecycle Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/e2e-test.js"
+  },
+  "keywords": [
+    "resource-sharing",
+    "equipment-booking",
+    "fair-allocation",
+    "compliance",
+    "audit-trail"
+  ],
+  "author": "Codeverse Team",
+  "license": "GPL-3.0"
+}
+
