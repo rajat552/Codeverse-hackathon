@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 320" width="100%" height="auto">
+  <defs>
+    <linearGradient id="flowBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="cardGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="shadow2" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="1100" height="320" rx="14" fill="url(#flowBg)" stroke="#334155" stroke-width="1.2"/>
+
+  <!-- Title Header -->
+  <text x="40" y="44" fill="#38bdf8" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" letter-spacing="1">END-TO-END CUSTODY &amp; AUDIT PIPELINE</text>
+  <text x="40" y="74" fill="#f8fafc" font-family="-apple-system, sans-serif" font-size="22" font-weight="700">4-Stage Controlled Institutional Resource Lifecycle</text>
+
+  <!-- Flow Steps -->
+  <!-- Step 1 -->
+  <g transform="translate(40, 105)">
+    <rect width="230" height="175" rx="10" fill="url(#cardGrad2)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow2)"/>
+    <circle cx="36" cy="36" r="16" fill="#1e3a8a"/>
+    <text x="31" y="42" fill="#60a5fa" font-family="-apple-system, sans-serif" font-size="14" font-weight="800">1</text>
+    <text x="64" y="42" fill="#f1f5f9" font-family="-apple-system, sans-serif" font-size="15" font-weight="700">Eligibility Gate</text>
+    <text x="20" y="78" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">Checks user training badge</text>
+    <text x="20" y="98" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">(e.g., Laser 3, Cleanroom).</text>
+    <rect x="20" y="118" width="180" height="24" rx="4" fill="#0f2b1d" stroke="#10b981" stroke-width="0.8"/>
+    <text x="32" y="134" fill="#34d399" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">✔ Auto-Verified Badge</text>
+  </g>
+
+  <!-- Arrow 1 to 2 -->
+  <g transform="translate(280, 180)">
+    <path d="M 0 0 L 20 0 M 12 -6 L 20 0 L 12 6" stroke="#64748b" stroke-width="2" fill="none"/>
+  </g>
+
+  <!-- Step 2 -->
+  <g transform="translate(310, 105)">
+    <rect width="230" height="175" rx="10" fill="url(#cardGrad2)" stroke="#818cf8" stroke-width="1.5" filter="url(#shadow2)"/>
+    <circle cx="36" cy="36" r="16" fill="#312e81"/>
+    <text x="31" y="42" fill="#a5b4fc" font-family="-apple-system, sans-serif" font-size="14" font-weight="800">2</text>
+    <text x="64" y="42" fill="#f1f5f9" font-family="-apple-system, sans-serif" font-size="15" font-weight="700">Fair Allocation</text>
+    <text x="20" y="78" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">Prevents hoarding. If busy,</text>
+    <text x="20" y="98" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">places in fair-queue waitlist.</text>
+    <rect x="20" y="118" width="180" height="24" rx="4" fill="#1e1b4b" stroke="#6366f1" stroke-width="0.8"/>
+    <text x="32" y="134" fill="#c7d2fe" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">⚖️ Real-Time Queue Mgmt</text>
+  </g>
+
+  <!-- Arrow 2 to 3 -->
+  <g transform="translate(550, 180)">
+    <path d="M 0 0 L 20 0 M 12 -6 L 20 0 L 12 6" stroke="#64748b" stroke-width="2" fill="none"/>
+  </g>
+
+  <!-- Step 3 -->
+  <g transform="translate(580, 105)">
+    <rect width="230" height="175" rx="10" fill="url(#cardGrad2)" stroke="#10b981" stroke-width="1.5" filter="url(#shadow2)"/>
+    <circle cx="36" cy="36" r="16" fill="#064e3b"/>
+    <text x="31" y="42" fill="#6ee7b7" font-family="-apple-system, sans-serif" font-size="14" font-weight="800">3</text>
+    <text x="64" y="42" fill="#f1f5f9" font-family="-apple-system, sans-serif" font-size="15" font-weight="700">Guided Handover</text>
+    <text x="20" y="78" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">Desk staff verifies barcode,</text>
+    <text x="20" y="98" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">lens, power cords, condition.</text>
+    <rect x="20" y="118" width="180" height="24" rx="4" fill="#042f2e" stroke="#14b8a6" stroke-width="0.8"/>
+    <text x="32" y="134" fill="#5eead4" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">📋 Custody Contract Bound</text>
+  </g>
+
+  <!-- Arrow 3 to 4 -->
+  <g transform="translate(820, 180)">
+    <path d="M 0 0 L 20 0 M 12 -6 L 20 0 L 12 6" stroke="#64748b" stroke-width="2" fill="none"/>
+  </g>
+
+  <!-- Step 4 -->
+  <g transform="translate(850, 105)">
+    <rect width="210" height="175" rx="10" fill="url(#cardGrad2)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow2)"/>
+    <circle cx="36" cy="36" r="16" fill="#78350f"/>
+    <text x="31" y="42" fill="#fde68a" font-family="-apple-system, sans-serif" font-size="14" font-weight="800">4</text>
+    <text x="64" y="42" fill="#f1f5f9" font-family="-apple-system, sans-serif" font-size="15" font-weight="700">Audit &amp; Release</text>
+    <text x="20" y="78" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">Return inspection check,</text>
+    <text x="20" y="98" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="12">incident flag if damaged.</text>
+    <rect x="20" y="118" width="168" height="24" rx="4" fill="#451a03" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="28" y="134" fill="#fcd34d" font-family="-apple-system, sans-serif" font-size="11" font-weight="600">🔒 SHA-256 Audit Log</text>
+  </g>
+</svg>
