@@ -1,4 +1,3 @@
-// @ts-check
 const assert = require('node:assert');
 const http = require('node:http');
 

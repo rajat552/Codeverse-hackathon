@@ -1,4 +1,3 @@
-// @ts-check
 /**
  * EquipShare Frontend Application
  * Fully integrated client communicating directly with Node.js SQLite Backend
