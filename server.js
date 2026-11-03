@@ -133,6 +133,7 @@ db.exec(`
     outcome TEXT NOT NULL, -- 'success', 'denied', 'conflict', 'failed'
     reason TEXT,
     details TEXT,
+    sha256_hash TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -155,6 +156,13 @@ db.exec(`
     updated_at TEXT NOT NULL
   );
 `);
+
+// Migration: Ensure sha256_hash column exists on existing audit_events tables
+try {
+  db.exec('ALTER TABLE audit_events ADD COLUMN sha256_hash TEXT;');
+} catch (e) {
+  // Column already exists
+}
 
 // Seed Initial Demonstration Data
 function seedDatabase() {
@@ -357,10 +365,11 @@ function seedDatabase() {
 
   // 5. Initial Audit Log
   const insertAudit = db.prepare(`
-    INSERT INTO audit_events (id, actor_id, actor_name, actor_role, action, target_type, target_id, outcome, reason, details, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO audit_events (id, actor_id, actor_name, actor_role, action, target_type, target_id, outcome, reason, details, sha256_hash, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  insertAudit.run('aud_init_01', 'usr_admin', 'Alex Rivera', 'admin', 'SYSTEM_INITIALIZED', 'system', 'root', 'success', 'System setup complete', 'Configured default fair-use policies and seed resources', now);
+  const initHash = crypto.createHash('sha256').update(`usr_admin|admin|SYSTEM_INITIALIZED|system|root|success|${now}`).digest('hex');
+  insertAudit.run('aud_init_01', 'usr_admin', 'Alex Rivera', 'admin', 'SYSTEM_INITIALIZED', 'system', 'root', 'success', 'System setup complete', 'Configured default fair-use policies and seed resources', initHash, now);
 
   console.log('Seed data successfully loaded.');
 }
@@ -370,16 +379,18 @@ seedDatabase();
 // In-Memory Session Storage
 const sessions = new Map();
 
-// Helper to log audit events
+// Helper to log audit events with cryptographic SHA-256 integrity
 function logAudit(actor, action, targetType, targetId, outcome, reason, details) {
   const id = 'aud_' + crypto.randomUUID().slice(0, 8);
   const now = new Date().toISOString();
   try {
+    const payload = `${actor.id}|${actor.role}|${action}|${targetType}|${targetId}|${outcome}|${now}`;
+    const sha256Hash = crypto.createHash('sha256').update(payload).digest('hex');
     const stmt = db.prepare(`
-      INSERT INTO audit_events (id, actor_id, actor_name, actor_role, action, target_type, target_id, outcome, reason, details, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_events (id, actor_id, actor_name, actor_role, action, target_type, target_id, outcome, reason, details, sha256_hash, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, actor.id, actor.name, actor.role, action, targetType, targetId, outcome, reason || null, details || null, now);
+    stmt.run(id, actor.id, actor.name, actor.role, action, targetType, targetId, outcome, reason || null, details || null, sha256Hash, now);
   } catch (err) {
     console.error('Audit log failure:', err);
   }
@@ -423,17 +434,25 @@ function getSessionUser(req) {
   return null;
 }
 
-// Body parser helper
+// Body parser helper with strict size limit and error guards
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
+    let done = false;
+
     req.on('data', chunk => {
+      if (done) return;
       data += chunk;
       if (data.length > 5 * 1024 * 1024) { // 5MB limit
+        done = true;
+        req.destroy();
         reject(new Error('Payload too large'));
       }
     });
+
     req.on('end', () => {
+      if (done) return;
+      done = true;
       if (!data) return resolve({});
       try {
         resolve(JSON.parse(data));
@@ -441,7 +460,12 @@ function parseBody(req) {
         reject(new Error('Invalid JSON payload'));
       }
     });
-    req.on('error', reject);
+
+    req.on('error', err => {
+      if (done) return;
+      done = true;
+      reject(err);
+    });
   });
 }
 
@@ -1104,31 +1128,61 @@ const server = http.createServer(async (req, res) => {
             WHERE id = ?
           `).run(reason, nowIso, bookingId);
 
-          // Check if there is an eligible waitlisted booking to auto-promote
-          const waitlisted = db.prepare(`
-            SELECT id, requester_id FROM bookings 
-            WHERE resource_id = ? AND status = 'waitlisted'
-            ORDER BY created_at ASC LIMIT 1
-          `).get(booking.resource_id);
-
           let promotedId = null;
-          if (waitlisted) {
-            promotedId = waitlisted.id;
-            db.prepare(`
-              UPDATE bookings SET
-                status = 'approved',
-                waitlist_position = NULL,
-                decision_reason = 'Auto-promoted from waitlist upon slot cancellation',
-                updated_at = ?
-              WHERE id = ?
-            `).run(nowIso, waitlisted.id);
+          if (booking.status !== 'waitlisted') {
+            // Check if there is an eligible waitlisted booking to auto-promote
+            const waitlisted = db.prepare(`
+              SELECT id, requester_id, start_time, end_time FROM bookings 
+              WHERE resource_id = ? AND status = 'waitlisted'
+              ORDER BY created_at ASC LIMIT 1
+            `).get(booking.resource_id);
 
-            pushNotification(
-              waitlisted.requester_id,
-              'Waitlist Promotion: Slot Confirmed!',
-              `A slot opened for ${booking.resource_name} and your booking has been confirmed!`,
-              'success'
-            );
+            if (waitlisted) {
+              // Ensure the waitlisted booking has no conflicts with other approved/in_use bookings
+              const overlap = db.prepare(`
+                SELECT id FROM bookings 
+                WHERE resource_id = ? 
+                  AND id != ?
+                  AND status IN ('approved', 'in_use')
+                  AND start_time < ? 
+                  AND end_time > ?
+              `).get(booking.resource_id, waitlisted.id, waitlisted.end_time, waitlisted.start_time);
+
+              if (!overlap) {
+                promotedId = waitlisted.id;
+                db.prepare(`
+                  UPDATE bookings SET
+                    status = 'approved',
+                    waitlist_position = NULL,
+                    decision_reason = 'Auto-promoted from waitlist upon slot cancellation',
+                    updated_at = ?
+                  WHERE id = ?
+                `).run(nowIso, waitlisted.id);
+
+                // Re-adjust remaining waitlist positions
+                db.prepare(`
+                  UPDATE bookings 
+                  SET waitlist_position = waitlist_position - 1 
+                  WHERE resource_id = ? AND status = 'waitlisted' AND waitlist_position > 1
+                `).run(booking.resource_id);
+
+                pushNotification(
+                  waitlisted.requester_id,
+                  'Waitlist Promotion: Slot Confirmed!',
+                  `A slot opened for ${booking.resource_name} and your booking has been confirmed!`,
+                  'success'
+                );
+              }
+            }
+          } else {
+            // If the cancelled booking was itself waitlisted, shift down remaining queue positions
+            if (booking.waitlist_position) {
+              db.prepare(`
+                UPDATE bookings 
+                SET waitlist_position = waitlist_position - 1 
+                WHERE resource_id = ? AND status = 'waitlisted' AND waitlist_position > ?
+              `).run(booking.resource_id, booking.waitlist_position);
+            }
           }
 
           db.exec('COMMIT');
@@ -1166,7 +1220,15 @@ const server = http.createServer(async (req, res) => {
           return sendJSON(res, 400, { error: `INVALID_STATE: Cannot record pickup for booking in status "${booking.status}" (must be "approved")` });
         }
 
-        // Requester or Owner or Staff can record pickup
+        // Authorization check: Requester, Owner, Manager, or Admin
+        const isPickupAuth = activeUser.role === 'admin' || 
+                             activeUser.role === 'manager' || 
+                             booking.owner_id === activeUser.id || 
+                             booking.requester_id === activeUser.id;
+        if (!isPickupAuth) {
+          return sendJSON(res, 403, { error: 'FORBIDDEN: You are not authorized to record pickup for this booking' });
+        }
+
         const nowIso = new Date().toISOString();
         const reportId = 'cnd_' + crypto.randomUUID().slice(0, 8);
 
@@ -1228,6 +1290,15 @@ const server = http.createServer(async (req, res) => {
 
         if (booking.status !== 'in_use') {
           return sendJSON(res, 400, { error: `INVALID_STATE: Cannot record return for booking in status "${booking.status}" (must be "in_use")` });
+        }
+
+        // Authorization check: Requester, Owner, Manager, or Admin
+        const isReturnAuth = activeUser.role === 'admin' || 
+                             activeUser.role === 'manager' || 
+                             booking.owner_id === activeUser.id || 
+                             booking.requester_id === activeUser.id;
+        if (!isReturnAuth) {
+          return sendJSON(res, 403, { error: 'FORBIDDEN: You are not authorized to record return for this booking' });
         }
 
         const nowIso = new Date().toISOString();
@@ -1301,14 +1372,15 @@ const server = http.createServer(async (req, res) => {
           FROM incidents i
           JOIN resources r ON i.resource_id = r.id
           JOIN users u ON i.reported_by = u.id
+          JOIN bookings b ON i.booking_id = b.id
           LEFT JOIN users s ON i.resolved_by = s.id
           WHERE 1=1
         `;
         const params = [];
 
         if (activeUser.role === 'requester') {
-          query += ' AND i.reported_by = ?';
-          params.push(activeUser.id);
+          query += ' AND (i.reported_by = ? OR b.requester_id = ?)';
+          params.push(activeUser.id, activeUser.id);
         } else if (activeUser.role === 'owner') {
           query += ' AND r.owner_id = ?';
           params.push(activeUser.id);
@@ -1329,6 +1401,11 @@ const server = http.createServer(async (req, res) => {
 
         const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(booking_id);
         if (!booking) return sendJSON(res, 404, { error: 'Booking not found' });
+
+        // Authorization check: Requester can only report for their own booking; owner for their resource
+        if (activeUser.role === 'requester' && booking.requester_id !== activeUser.id) {
+          return sendJSON(res, 403, { error: 'FORBIDDEN: You can only report incidents on your own bookings' });
+        }
 
         const id = 'inc_' + crypto.randomUUID().slice(0, 8);
         const nowIso = new Date().toISOString();
@@ -1438,8 +1515,16 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // --- STATIC FILE SERVING ---
-  let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
+  // --- STATIC FILE SERVING (WITH PATH TRAVERSAL DEFENSE) ---
+  const safeRelativePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(__dirname, safeRelativePath === '/' || safeRelativePath === '.' ? 'index.html' : safeRelativePath);
+
+  // Prevent directory traversal outside __dirname
+  if (!path.resolve(filePath).startsWith(path.resolve(__dirname))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    return res.end('403 Forbidden: Access Denied');
+  }
+
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
@@ -1466,6 +1551,24 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
+// Graceful shutdown handling
+function gracefulShutdown() {
+  console.log('\nGracefully closing SQLite database and stopping server...');
+  try {
+    db.close();
+  } catch (e) {
+    // Already closed or error
+  }
+  server.close(() => {
+    process.exit(0);
+  });
+}
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
 server.listen(PORT, () => {
   console.log(`Resource-Sharing Platform server running on http://localhost:${PORT}`);
 });
+
+module.exports = { server, db, seedDatabase };
